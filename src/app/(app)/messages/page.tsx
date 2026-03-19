@@ -5,7 +5,6 @@ import {
   getLeadsForCurrentUser,
   getMessagesForLead,
   getCurrentUser,
-  MOCK_MESSAGES,
 } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
@@ -13,8 +12,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
-import { Send, MessageSquare, Clock } from "lucide-react";
+import { Send, MessageSquare, Clock, ArrowLeft } from "lucide-react";
 
 function formatTime(dateStr: string) {
   const date = new Date(dateStr);
@@ -38,6 +36,7 @@ export default function MessagesPage() {
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(
     leads[0]?.id || null
   );
+  const [mobileShowThread, setMobileShowThread] = useState(false);
 
   // Build conversation list
   const conversations = leads
@@ -79,6 +78,15 @@ export default function MessagesPage() {
 
   const selectedConvo = conversations.find((c) => c.leadId === selectedLeadId);
 
+  function handleSelectConvo(leadId: string) {
+    setSelectedLeadId(leadId);
+    setMobileShowThread(true);
+  }
+
+  function handleBack() {
+    setMobileShowThread(false);
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -89,9 +97,14 @@ export default function MessagesPage() {
       </div>
 
       <Card className="overflow-hidden">
-        <div className="flex h-[520px]">
+        <div className="flex h-[calc(100vh-12rem)] sm:h-[520px]">
           {/* Conversation list */}
-          <div className="w-64 shrink-0 border-r">
+          <div
+            className={cn(
+              "w-full shrink-0 border-r sm:w-64",
+              mobileShowThread && "hidden sm:block"
+            )}
+          >
             <div className="border-b p-3">
               <h3 className="text-sm font-medium">Conversations</h3>
             </div>
@@ -99,7 +112,7 @@ export default function MessagesPage() {
               {conversations.map((convo) => (
                 <button
                   key={convo.leadId}
-                  onClick={() => setSelectedLeadId(convo.leadId)}
+                  onClick={() => handleSelectConvo(convo.leadId)}
                   className={cn(
                     "flex w-full flex-col gap-0.5 border-b p-3 text-left transition-colors hover:bg-muted/50",
                     selectedLeadId === convo.leadId && "bg-muted"
@@ -142,21 +155,34 @@ export default function MessagesPage() {
           </div>
 
           {/* Message thread */}
-          <div className="flex flex-1 flex-col">
+          <div
+            className={cn(
+              "flex flex-1 flex-col",
+              !mobileShowThread && "hidden sm:flex"
+            )}
+          >
             {selectedConvo ? (
               <>
                 {/* Thread header */}
                 <div className="flex items-center gap-3 border-b p-3">
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    className="sm:hidden"
+                    onClick={handleBack}
+                  >
+                    <ArrowLeft className="size-4" />
+                  </Button>
                   <Avatar size="sm">
                     <AvatarFallback>
                       {selectedConvo.otherName[0]}
                     </AvatarFallback>
                   </Avatar>
-                  <div>
-                    <div className="text-sm font-medium">
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-medium">
                       {selectedConvo.otherName}
                     </div>
-                    <div className="text-[10px] text-muted-foreground">
+                    <div className="truncate text-[10px] text-muted-foreground">
                       {selectedConvo.title}
                     </div>
                   </div>
@@ -173,7 +199,7 @@ export default function MessagesPage() {
                       >
                         <div
                           className={cn(
-                            "max-w-[75%] rounded-lg p-3",
+                            "max-w-[85%] sm:max-w-[75%] rounded-lg p-3",
                             isMe
                               ? "bg-primary text-primary-foreground"
                               : "bg-muted"

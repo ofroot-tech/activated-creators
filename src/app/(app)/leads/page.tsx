@@ -10,9 +10,6 @@ import { LEAD_STATUSES, VERTICALS } from "@/lib/constants";
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -106,17 +103,82 @@ export default function LeadsPage() {
         ))}
       </div>
 
-      {/* Leads Table */}
-      <Card>
+      {/* Mobile: Card list */}
+      <div className="space-y-3 sm:hidden">
+        {filtered.map((lead) => {
+          const statusInfo = LEAD_STATUSES.find(
+            (s) => s.value === lead.status
+          );
+          const verticalInfo = VERTICALS.find(
+            (v) => v.value === lead.vertical
+          );
+          const other =
+            user.role === "creator"
+              ? lead.business_profile
+              : lead.creator_profile;
+          const otherName =
+            user.role === "creator"
+              ? (other as typeof lead.business_profile)?.company_name
+              : other?.profile?.full_name;
+
+          return (
+            <Card
+              key={lead.id}
+              className="cursor-pointer transition-shadow hover:shadow-md"
+              onClick={() => setSelectedLead(lead)}
+            >
+              <CardContent className="p-4 space-y-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-medium">
+                      {lead.title}
+                    </div>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Avatar size="sm">
+                        <AvatarFallback className="text-[10px]">
+                          {(otherName || "?")[0]}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="truncate text-xs text-muted-foreground">
+                        {otherName}
+                      </span>
+                    </div>
+                  </div>
+                  <Badge
+                    variant="secondary"
+                    className={`shrink-0 text-[10px] ${statusInfo?.color.replace("bg-", "text-")}`}
+                  >
+                    {statusInfo?.label}
+                  </Badge>
+                </div>
+                <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                  <Badge variant="outline" className="text-[10px]">
+                    {verticalInfo?.icon} {verticalInfo?.label}
+                  </Badge>
+                  {lead.estimated_value && (
+                    <span className="font-medium text-foreground">
+                      {formatCurrency(lead.estimated_value)}
+                    </span>
+                  )}
+                  <span className="ml-auto">{formatDate(lead.updated_at)}</span>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      {/* Desktop: Table */}
+      <Card className="hidden sm:block">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Campaign</TableHead>
               <TableHead>{user.role === "creator" ? "Brand" : "Creator"}</TableHead>
-              <TableHead>Vertical</TableHead>
+              <TableHead className="hidden lg:table-cell">Vertical</TableHead>
               <TableHead>Value</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Updated</TableHead>
+              <TableHead className="hidden lg:table-cell">Updated</TableHead>
               <TableHead className="w-10" />
             </TableRow>
           </TableHeader>
@@ -154,7 +216,7 @@ export default function LeadsPage() {
                       <span className="text-sm">{otherName}</span>
                     </div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="hidden lg:table-cell">
                     <Badge variant="outline" className="text-[10px]">
                       {verticalInfo?.icon} {verticalInfo?.label}
                     </Badge>
@@ -162,7 +224,7 @@ export default function LeadsPage() {
                   <TableCell>
                     {lead.estimated_value
                       ? formatCurrency(lead.estimated_value)
-                      : "—"}
+                      : "\u2014"}
                   </TableCell>
                   <TableCell>
                     <Badge
@@ -172,7 +234,7 @@ export default function LeadsPage() {
                       {statusInfo?.label}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-muted-foreground">
+                  <TableCell className="hidden lg:table-cell text-muted-foreground">
                     {formatDate(lead.updated_at)}
                   </TableCell>
                   <TableCell>
@@ -197,7 +259,7 @@ export default function LeadsPage() {
         onOpenChange={(open) => !open && setSelectedLead(null)}
       >
         {selectedLead && (
-          <DialogContent className="sm:max-w-lg">
+          <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{selectedLead.title}</DialogTitle>
               <DialogDescription className="flex items-center gap-2">
@@ -220,7 +282,7 @@ export default function LeadsPage() {
             </DialogHeader>
 
             {/* Parties */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="rounded-lg bg-muted/50 p-3">
                 <div className="mb-1 flex items-center gap-1 text-[10px] text-muted-foreground">
                   <Building2 className="size-3" />
@@ -257,7 +319,7 @@ export default function LeadsPage() {
                   <p className="text-sm">{selectedLead.message}</p>
                 </div>
               )}
-              <div className="flex items-center gap-4 text-sm">
+              <div className="flex flex-wrap items-center gap-4 text-sm">
                 {selectedLead.estimated_value && (
                   <div className="flex items-center gap-1">
                     <DollarSign className="size-3.5 text-muted-foreground" />
